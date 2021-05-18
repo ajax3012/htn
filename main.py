@@ -23,14 +23,25 @@ sender_email = "groupnhatnguyet@gmail.com"
 receiver_email = "datnvt.14@grad.uit.edu.vn"
 password = "Aa123456!"
 message = """\
-Subject: Hi there
+Subject: Nguoi la oi
 
-Nguoi la oi."""
+Nguoi la oi!
+Xin cho toi muon bo vai
+Tua dau guc nga vi moi met qua
+Nguoi la oi!
+Xin cho toi muon nu hon
+Muon roi toi tra, dung voi vang qua
+Nguoi la oi!
+Xin hay ghe mua dum toi
+ot lieu quen lang, de toi thanh than
+Nguoi la oi!
+Xin cho toi muon niem vui
+De lan yeu duoi nay la lan cuoi thoiiii."""
 
 # Create a secure SSL context
 context = ssl.create_default_context()
 
-
+# Connect to MQTT broker
 broker_address="broker.hivemq.com"
 client = mqtt.Client("P1")
 client.connect(broker_address)
@@ -91,6 +102,7 @@ while True:
                 result = firebase.post('/nguoilaoi',data)
                 delta = 0
         else:
+            cv2.rectangle(im,(x-50,y-50),(x+w+50,y+h+50),(0,0,255),2)
             cv2.putText(im, "nguoi la oi", (x+5, y-5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
             if (delta > 10):
                 my_string2 = base64.b64encode(im)
@@ -102,23 +114,24 @@ while True:
                           'Image': f'{my_string2}'
                           }
                 result = firebase.post('/nguoilaoi',data)
+                
+                # Try to log in to server and send email
+                try:
+                    server = smtplib.SMTP(smtp_server,port)
+                    server.ehlo() # Can be omitted
+                    server.starttls(context=context) # Secure the connection
+                    server.ehlo() # Can be omitted
+                    server.login(sender_email, password)
+                    # TODO: Send email here
+                    server.sendmail(sender_email, receiver_email, message)
+                
+                except Exception as e:
+                    # Print any error messages to stdout
+                    print(e)
+                finally:
+                    server.quit() 
+
                 delta = 0
-            # Try to log in to server and send email
-            #try:
-            #    server = smtplib.SMTP(smtp_server,port)
-            #    server.ehlo() # Can be omitted
-            #    server.starttls(context=context) # Secure the connection
-            #    server.ehlo() # Can be omitted
-            #    server.login(sender_email, password)
-                # TODO: Send email here
-            #    server.sendmail(sender_email, receiver_email, message)
-    
-            #except Exception as e:
-                # Print any error messages to stdout
-            #    print(e)
-            #finally:
-            #    server.quit() 
-            
         
         #cv2.rectangle(im,(x,y),(x+w,y+h),color_dict[label],2)
         #cv2.rectangle(im,(x,y-40),(x+w,y),color_dict[label],-1)
@@ -128,13 +141,9 @@ while True:
        
         cv2.putText(im, str(confidence), (x+5,y+h-5), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,0), 1)
         
-#        sender_email = "groupnhatnguyet@gmail.com"
-#        receiver_email = "datnvt.14@grad.uit.edu.vn"
-#        message = f"""\
-#        Subject: Hi there 
-#This message is sent from Python {str(confidence)} ."""
 
-# Send email here
+
+# Send MQTT message here
 
         client.loop_start() #start the loop
         client.publish("nguoilaoi", f"{str(idz)}")
